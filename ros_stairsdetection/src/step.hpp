@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cmath>
 #include <geometry_msgs/Point.h>
+#include <pcl/common/common.h>
 
 #define PI 3.14159265
 
@@ -185,6 +186,11 @@ public:
 		return (m_min.x == other.getMin().x && m_min.y == other.getMin().y && m_min.z == other.getMin().z
 			&& m_max.x == other.getMax().x && m_max.y == other.getMax().y && m_max.z == other.getMax().z);
 	}
+
+        pcl::PointXYZ min_point_OBB;
+        pcl::PointXYZ max_point_OBB;
+        pcl::PointXYZ position_OBB;
+        Eigen::Matrix3f rotational_matrix_OBB;
 
 private:
 	geometry_msgs::Point m_min;

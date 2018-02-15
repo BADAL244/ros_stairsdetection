@@ -128,5 +128,5 @@ private:
 
 	TransformHelper m_th;
 
-	void buildRosMarkerSteps(visualization_msgs::Marker &marker, std::vector<Step> &steps, double (&color)[3]);
+  void buildRosMarkerSteps(visualization_msgs::MarkerArray &marker_array, std::vector<Step> &steps, double (&color)[3]);
 };
