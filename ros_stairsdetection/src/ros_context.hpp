@@ -36,11 +36,31 @@ public:
 
 	bool getPublishStairwaysSetting() {
 		return m_publishStairwaysSetting;
-	}
+  }
 
-	double getMinStepWidthSetting() {
-		return m_minStepWidthSetting;
-	}
+  double getMinNumPointsSetting() {
+    return m_minNumPointsSetting;
+  }
+
+  double getMaxNumPointsSetting() {
+    return m_maxNumPointsSetting;
+  }
+
+  double getMinStepDepthSetting() {
+    return m_minStepDepthSetting;
+  }
+
+  double getMaxStepDepthSetting() {
+    return m_maxStepDepthSetting;
+  }
+
+  double getMinStepWidthSetting() {
+    return m_minStepWidthSetting;
+  }
+
+  double getMaxStepWidthSetting() {
+    return m_maxStepWidthSetting;
+  }
 
 	double getMinStepHeightSetting() {
 		return m_minStepHeightSetting;
@@ -91,7 +111,12 @@ private:
 	int    m_segmentationIterationSetting;
 	double m_segmentationThresholdSetting;
 
-	double m_minStepWidthSetting;
+  double m_minNumPointsSetting;
+  double m_maxNumPointsSetting;
+  double m_minStepDepthSetting;
+  double m_maxStepDepthSetting;
+  double m_minStepWidthSetting;
+  double m_maxStepWidthSetting;
 	double m_minStepHeightSetting;
 	double m_maxStepHeightSetting;
 

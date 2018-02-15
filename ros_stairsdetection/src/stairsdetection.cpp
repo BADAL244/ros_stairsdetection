@@ -140,9 +140,10 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// extract the inliers
 		extract.setInputCloud(cloud);
 		extract.setIndices(inliers);
-		extract.setNegative(false);
-        extract.filter(*cloud1);
-        ROS_INFO("num points: %d", (int)cloud1->size());
+    extract.setNegative(false);
+    extract.filter(*cloud1);
+    int num_step_points = (int)cloud1->size();
+    ROS_INFO("num points: %d", (int)cloud1->size());
 
 		extract.setNegative(true);
 		extract.filter(*cloud2);
@@ -170,7 +171,11 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
         //transformPCLPointToROSPoint(max, max_r);
 
 		// Heigh enough?
-		if (step.getHeight() < rc.getMinStepHeightSetting()) {
+    if (step.getHeight() < rc.getMinStepHeightSetting() || step.getHeight() > rc.getMaxStepHeightSetting()
+        || step.getWidth() < rc.getMinStepWidthSetting() || step.getWidth() > rc.getMaxStepWidthSetting()
+        || step.getDepth() < rc.getMinStepDepthSetting() || step.getDepth() > rc.getMaxStepDepthSetting()
+        || num_step_points < rc.getMinNumPointsSetting() || num_step_points > rc.getMaxNumPointsSetting()) {
+      ROS_INFO("%f %f %f %f %i %i", rc.getMinStepWidthSetting(), rc.getMaxStepWidthSetting(), rc.getMinStepDepthSetting(), rc.getMaxStepDepthSetting(), rc.getMinNumPointsSetting(), rc.getMaxNumPointsSetting());
 			continue;
 		}
 

@@ -65,23 +65,18 @@ void TransformHelper::transformPCLPointToROSPoint(pcl::PointXYZ &input, geometry
  */
 void TransformHelper::buildStepFromAABB(Step &step, std::vector<geometry_msgs::Point> &points) {
 
-	// min
-	points.push_back(step.getMin());
+  double avg_z = 0.5 * (step.getMin().z + step.getMax().z);
 
 	// p2
-	geometry_msgs::Point p2;
-	p2.x = step.getMin().x;
-	p2.y = step.getMin().y;
-	p2.z = step.getMax().z;
-	points.push_back(p2);
-
-	// max
-	points.push_back(step.getMax());
-
-	// p4
-	geometry_msgs::Point p4;
-	p4.x = step.getMax().x;
-	p4.y = step.getMax().y;
-	p4.z = step.getMin().z;
-	points.push_back(p4);
+  geometry_msgs::Point p;
+  p.x = step.getMin().x;
+  p.y = step.getMin().y;
+  p.z = avg_z;
+  points.push_back(p);
+  p.x = step.getMax().x;
+  points.push_back(p);
+  p.y = step.getMax().y;
+  points.push_back(p);
+  p.x = step.getMin().x;
+  points.push_back(p);
 }
