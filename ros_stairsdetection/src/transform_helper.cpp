@@ -24,6 +24,15 @@ void TransformHelper::getAABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Step &s
 	transformPCLPointToROSPoint(max, max_r);
 
 	step.setMinMax(min_r, max_r);
+
+    double area = std::abs(step.max_point_OBB.x - step.min_point_OBB.x) * std::abs(step.max_point_OBB.y - step.min_point_OBB.y);
+
+
+    double density = cloud->size() / area;
+
+    ROS_INFO("area: %f density: %f", area, density);
+
+    step.setPointDensity(density);
 }
 
 bool TransformHelper::transform(geometry_msgs::Point &point, std::string &target_frame, std::string &source_frame,

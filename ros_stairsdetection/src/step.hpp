@@ -95,6 +95,14 @@ public:
 		m_max = max;
         }
 
+        void setPointDensity(double density) {
+                m_point_density = density;
+        }
+
+        double getPointDensity() const {
+                return m_point_density;
+        }
+
         /**
          * Returns the width of the Step.
          * @return the width of the Step
@@ -191,6 +199,8 @@ public:
         pcl::PointXYZ max_point_OBB;
         pcl::PointXYZ position_OBB;
         Eigen::Matrix3f rotational_matrix_OBB;
+
+        double m_point_density;
 
 private:
 	geometry_msgs::Point m_min;

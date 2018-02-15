@@ -13,6 +13,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/common/angles.h>
 
 #include <pcl_ros/transforms.h>
@@ -68,6 +69,21 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
     pcl::fromROSMsg(*input, *unfilteredCloud);
 
+    pcl::CropBox<pcl::PointXYZ> cropBoxFilter (false);
+    cropBoxFilter.setInputCloud (unfilteredCloud);
+    Eigen::Vector4f min_pt (0.0f, -1.0f, -1.0f, 1.0f);
+    Eigen::Vector4f max_pt (1.5f, 1.0f, 1.5f, 1.0f);
+
+    // Cropbox slighlty bigger then bounding box of points
+    cropBoxFilter.setMin (min_pt);
+    cropBoxFilter.setMax (max_pt);
+
+
+    // Cloud
+    pcl::PointCloud<pcl::PointXYZ>::Ptr boxFilteredCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+    cropBoxFilter.filter(*boxFilteredCloud);
+
     //pcl_conversions::toPCL(*input, *unfilteredCloud);
 
 	// downsample the input data to speed things up.
@@ -86,7 +102,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr unfiltered_cloud_world = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 
-    pcl::transformPointCloud(*unfilteredCloud, *unfiltered_cloud_world, cam_to_world_transform_eigen);
+    pcl::transformPointCloud(*boxFilteredCloud, *unfiltered_cloud_world, cam_to_world_transform_eigen);
 
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -109,7 +125,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     seg.setOptimizeCoefficients(true);
 
-    seg.setEpsAngle(pcl::deg2rad (15.0));
+    seg.setEpsAngle(pcl::deg2rad (5.0));
     seg.setAxis(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
     seg.setDistanceThreshold(0.1);
 
@@ -150,7 +166,6 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
     extract.setNegative(false);
     extract.filter(*cloud1);
     int num_step_points = (int)cloud1->size();
-    ROS_INFO("num points: %d", (int)cloud1->size());
 
 		extract.setNegative(true);
 		extract.filter(*cloud2);
@@ -160,9 +175,13 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// PCL points are automatically transformed to ROS points while calculating AABB
 		Step step;
         rc.getTransformHelper().getAABB(cloud1, step);
+
+
+        ROS_INFO("num points: %d , density: %f", (int)cloud1->size(), step.getPointDensity());
+
         //rc.getTransformHelper().transformToRobotCoordinates(step);
 
-		// Heigh enough?
+        // High enough?
     if (step.getHeight() < rc.getMinStepHeightSetting() || step.getHeight() > rc.getMaxStepHeightSetting()
         || step.getWidth() < rc.getMinStepWidthSetting() || step.getWidth() > rc.getMaxStepWidthSetting()
         || step.getDepth() < rc.getMinStepDepthSetting() || step.getDepth() > rc.getMaxStepDepthSetting()
