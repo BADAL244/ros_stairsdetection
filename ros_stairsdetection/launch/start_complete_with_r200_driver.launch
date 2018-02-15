@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find ros_stairsdetection)/launch/r200_setup.launch">
+    </include>
+    
+    <include file="$(find realsense_camera)/launch/r200_nodelet_rgbd.launch">
+    </include>
+
+    <param name="/camera/driver/r200_dc_preset" value="0" />
+    
+</launch>
