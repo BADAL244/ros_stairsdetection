@@ -151,8 +151,23 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// calculate AABB and transform to world coordinates
 		// PCL points are automatically transformed to ROS points while calculating AABB
 		Step step;
-		rc.getTransformHelper().getAABB(cloud1, step);
+        //rc.getTransformHelper().getAABB(cloud1, step);
         //rc.getTransformHelper().transformToRobotCoordinates(step);
+
+
+        /*
+        pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
+        feature_extractor.setInputCloud(cloud1);
+        feature_extractor.compute();
+
+        pcl::PointXYZ min, max;
+        feature_extractor.getAABB(min, max);
+        */
+
+        // transform PCL points to ROS points
+        //geometry_msgs::Point min_r, max_r;
+        //transformPCLPointToROSPoint(min, min_r);
+        //transformPCLPointToROSPoint(max, max_r);
 
 		// Heigh enough?
 		if (step.getHeight() < rc.getMinStepHeightSetting()) {

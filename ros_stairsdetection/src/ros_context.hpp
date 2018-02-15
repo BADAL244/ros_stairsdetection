@@ -74,9 +74,12 @@ public:
 
 	void publishStairways(std::vector<Stairway> &stairway);
 
+    void publishCloud(const sensor_msgs::PointCloud2& cloud);
+
 private:
 	ros::Publisher m_pubSteps;
 	ros::Publisher m_pubStairways;
+    ros::Publisher m_pubCloud;
 
 	ros::ServiceServer m_exportService;
 	ros::ServiceServer m_importService;

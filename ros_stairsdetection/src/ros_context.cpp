@@ -52,6 +52,7 @@ void ROSContext::init(int argc, char **argv, void (*callback)(const sensor_msgs:
 	ros::Subscriber sub = nh.subscribe<sensor_msgs::PointCloud2>(inputSetting.c_str(), 1, callback);
 	m_pubSteps = nh.advertise<visualization_msgs::MarkerArray>(stepsSetting.c_str(), 0);
 	m_pubStairways = nh.advertise<visualization_msgs::MarkerArray>(stairwaysSetting.c_str(), 0);
+    m_pubCloud = nh.advertise<sensor_msgs::PointCloud2>("steps_cloud", 0);
 
 	/*
 	 * Init services to import/export stairways
@@ -135,4 +136,9 @@ void ROSContext::publishSteps(std::vector<Step> &steps) {
 	buildRosMarkerSteps(marker, steps, color);
 	markerArray.markers.push_back(marker);
 	m_pubSteps.publish(markerArray);
+}
+
+void ROSContext::publishCloud(const sensor_msgs::PointCloud2& cloud)
+{
+  m_pubCloud.publish(cloud);
 }
