@@ -13,6 +13,9 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/angles.h>
+
+#include <pcl_ros/transforms.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -26,12 +29,16 @@
 #include "transform_helper.hpp"
 #include "print_helpers.hpp"
 
+#include <tf/transform_listener.h>
+
 using namespace std;
 
 // forward declarations
 bool isStartingStep(Step &step);
 bool isNextStep(Stairway &stairway, Step &step);
 bool alreadyKnown(Stairway &stairway);
+
+tf::TransformListener* tfl_;
 
 pthread_mutex_t stairwaysMutex;
 vector<Stairway> stairways;
@@ -46,31 +53,67 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 	ROS_INFO("========================================================================");
 	ROS_INFO("New input data received.");
 
+
+    if (tfl_ == 0){
+      tfl_ = new tf::TransformListener();
+      sleep (1);
+    }
+
 	// convert from ros::pointcloud2 to pcl::pointcloud2
-	pcl::PCLPointCloud2* unfilteredCloud = new pcl::PCLPointCloud2;
-	pcl::PCLPointCloud2ConstPtr unfilteredCloudPtr(unfilteredCloud);
-	pcl_conversions::toPCL(*input, *unfilteredCloud);
+    //pcl::PCLPointCloud2* unfilteredCloud = new pcl::PCLPointCloud2;
+    //pcl::PCLPointCloud2ConstPtr unfilteredCloudPtr(unfilteredCloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr unfilteredCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filteredCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+
+    pcl::fromROSMsg(*input, *unfilteredCloud);
+
+    //pcl_conversions::toPCL(*input, *unfilteredCloud);
 
 	// downsample the input data to speed things up.
-	pcl::PCLPointCloud2::Ptr filteredCloud(new pcl::PCLPointCloud2);
+    //pcl::PCLPointCloud2::Ptr filteredCloud(new pcl::PCLPointCloud2);
 
-	pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
-	sor.setInputCloud(unfilteredCloudPtr);
-	sor.setLeafSize(0.02f, 0.02f, 0.02f);								// default: sor.setLeafSize(0.01f, 0.01f, 0.01f);
-	sor.filter(*filteredCloud);
+    tf::StampedTransform cam_to_world_transform;
+
+    if (tfl_->waitForTransform("world", input->header.frame_id, input->header.stamp, ros::Duration(1.0))){
+      tfl_->lookupTransform("world", input->header.frame_id, input->header.stamp, cam_to_world_transform);
+    }else{
+      ROS_WARN("tfl timed out, returning!");
+    }
+
+    Eigen::Matrix4f cam_to_world_transform_eigen;
+    pcl_ros::transformAsMatrix(cam_to_world_transform, cam_to_world_transform_eigen);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr unfiltered_cloud_world = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+    pcl::transformPointCloud(*unfilteredCloud, *unfiltered_cloud_world, cam_to_world_transform_eigen);
+
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    sor.setInputCloud(unfiltered_cloud_world);
+    float leaf_size = 0.05f;
+    sor.setLeafSize(leaf_size, leaf_size, leaf_size);								// default: sor.setLeafSize(0.01f, 0.01f, 0.01f);
+    sor.filter(*cloud);
 
 	// convert to pointcloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::fromPCLPointCloud2(*filteredCloud, *cloud);
+    //
+    //pcl::fromPCLPointCloud2(*filteredCloud, *cloud);
 
 	// Do the parametric segmentation
 	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	seg.setOptimizeCoefficients(true);
 
-	seg.setModelType(pcl::SACMODEL_PLANE);
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    seg.setOptimizeCoefficients(true);
+
+    seg.setEpsAngle(pcl::deg2rad (15.0));
+    seg.setAxis(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+    seg.setDistanceThreshold(0.05);
+
+    seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
 	seg.setMethodType(pcl::SAC_RANSAC);
 	seg.setMaxIterations(rc.getSegmentationIterationSetting());
 	seg.setDistanceThreshold(rc.getSegmentationThresholdSetting());
@@ -98,7 +141,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		extract.setInputCloud(cloud);
 		extract.setIndices(inliers);
 		extract.setNegative(false);
-		extract.filter(*cloud1);
+        extract.filter(*cloud1);
+        ROS_INFO("num points: %d", (int)cloud1->size());
 
 		extract.setNegative(true);
 		extract.filter(*cloud2);
@@ -108,7 +152,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// PCL points are automatically transformed to ROS points while calculating AABB
 		Step step;
 		rc.getTransformHelper().getAABB(cloud1, step);
-		rc.getTransformHelper().transformToRobotCoordinates(step);
+        //rc.getTransformHelper().transformToRobotCoordinates(step);
 
 		// Heigh enough?
 		if (step.getHeight() < rc.getMinStepHeightSetting()) {
@@ -132,7 +176,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		ROS_INFO("Publishing %d step(s)", (int) steps.size());
 
 		std::vector<Step> out = steps;
-		rc.getTransformHelper().transformToCameraCoordinates(out);
+        //rc.getTransformHelper().transformToCameraCoordinates(out);
 		rc.publishSteps(out);
 	}
 
@@ -147,7 +191,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 	//stairways.clear();
 	
 
-	ROS_INFO("-----------------------------------------------------------------");
+    ROS_INFO("-----------------------------------------------------------------");
 	/*
 	 * Try to build (multiple) stairways out of the steps
 	 */
@@ -367,6 +411,9 @@ bool clearStairs(ros_stairsdetection::ClearStairs::Request &req, ros_stairsdetec
 }
 
 int main(int argc, char **argv) {
+
+    tfl_ = 0;
+
 	pthread_mutex_init(&stairwaysMutex, NULL);
 
 	ROS_INFO("Starting up...");

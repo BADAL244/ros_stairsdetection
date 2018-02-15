@@ -66,7 +66,8 @@ void ROSContext::init(int argc, char **argv, void (*callback)(const sensor_msgs:
 void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::vector<Step> &steps,
 	double (&color)[3]) {
 
-	marker.header.frame_id = m_cameraFrameSetting.c_str();
+    //marker.header.frame_id = m_cameraFrameSetting.c_str();
+    marker.header.frame_id = "world";
 	marker.header.stamp = ros::Time::now();
 	marker.ns = m_namespaceSetting.c_str();
 	marker.id = 0;

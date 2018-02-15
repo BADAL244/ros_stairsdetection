@@ -46,9 +46,12 @@ bool TransformHelper::transform(geometry_msgs::Point &point, std::string &target
 }
 
 void TransformHelper::transformPCLPointToROSPoint(pcl::PointXYZ &input, geometry_msgs::Point &output) {
-	output.x = input.z;
-	output.y = input.x * (-1.f);
-	output.z = input.y * (-1.f);
+    //output.x = input.z;
+    //output.y = input.x * (-1.f);
+    //output.z = input.y * (-1.f);
+    output.x = input.x;
+    output.y = input.y;
+    output.z = input.z;
 }
 
 /*
