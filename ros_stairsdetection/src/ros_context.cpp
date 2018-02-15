@@ -34,6 +34,7 @@ void ROSContext::init(int argc, char **argv, void (*callback)(const sensor_msgs:
 	ros::param::get("~segmentation_threshold", m_segmentationThresholdSetting);
 
 	ros::param::get("~min_step_width", m_minStepWidthSetting);
+  ros::param::get("~max_step_width", m_maxStepWidthSetting);
 	ros::param::get("~min_step_height", m_minStepHeightSetting);
 	ros::param::get("~max_step_height", m_maxStepHeightSetting);
 

@@ -83,7 +83,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 	vector<Step> steps;
 
 	// Extract a model and repeat while 10% of the original cloud is still present
-	while (cloud->points.size() > 0.1 * pointsAtStart) {
+  while (cloud->points.size() > 0.1 * pointsAtStart) {
 		id++;
 
 		seg.setInputCloud(cloud);
@@ -111,7 +111,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		rc.getTransformHelper().transformToRobotCoordinates(step);
 
 		// Heigh enough?
-		if (step.getHeight() < rc.getMinStepHeightSetting()) {
+    if (step.getHeight() < rc.getMinStepHeightSetting() || step.getHeight() > rc.getMaxStepHeightSetting()
+        || step.getWidth() < rc.getMinStepWidthSetting() || step.getWidth() > rc.getMaxStepWidthSetting()) {
 			continue;
 		}
 
