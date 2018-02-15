@@ -125,6 +125,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
 	vector<Step> steps;
 
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > segmented_cloud_vector;
+
 	// Extract a model and repeat while 10% of the original cloud is still present
 	while (cloud->points.size() > 0.1 * pointsAtStart) {
 		id++;
@@ -152,23 +154,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// calculate AABB and transform to world coordinates
 		// PCL points are automatically transformed to ROS points while calculating AABB
 		Step step;
-        //rc.getTransformHelper().getAABB(cloud1, step);
+        rc.getTransformHelper().getAABB(cloud1, step);
         //rc.getTransformHelper().transformToRobotCoordinates(step);
-
-
-        /*
-        pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
-        feature_extractor.setInputCloud(cloud1);
-        feature_extractor.compute();
-
-        pcl::PointXYZ min, max;
-        feature_extractor.getAABB(min, max);
-        */
-
-        // transform PCL points to ROS points
-        //geometry_msgs::Point min_r, max_r;
-        //transformPCLPointToROSPoint(min, min_r);
-        //transformPCLPointToROSPoint(max, max_r);
 
 		// Heigh enough?
     if (step.getHeight() < rc.getMinStepHeightSetting() || step.getHeight() > rc.getMaxStepHeightSetting()
@@ -179,8 +166,62 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 			continue;
 		}
 
+        /*
+        if ((id ==0) && rc.cloudRequested()){
+          sensor_msgs::PointCloud2 cloud_out;
+          pcl::toROSMsg(*cloud1, cloud_out);
+          cloud_out.header.frame_id = "world";
+          cloud_out.header.stamp = ros::Time::now();
+          rc.publishCloud(cloud_out);
+        }
+        */
+
+        segmented_cloud_vector.push_back(cloud1);
 		steps.push_back(step);
 	}
+
+    if ( rc.cloudRequested()){
+
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr concat_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
+
+      size_t total_size = 0;
+      for (size_t i = 0; i < segmented_cloud_vector.size(); ++i){
+        total_size += segmented_cloud_vector[i]->size();
+      }
+
+      concat_cloud->reserve(total_size);
+
+      for (size_t i = 0; i < segmented_cloud_vector.size(); ++i){
+
+        pcl::PointCloud<pcl::PointXYZ>& curr = *segmented_cloud_vector[i];
+
+        pcl::PointXYZRGB point (static_cast<double>(i)/static_cast<double>(segmented_cloud_vector.size()) , 1.0, 1.0);
+
+        for (size_t p = 0; p < curr.size(); ++p){
+
+          point.x = curr[p].x;
+          point.y = curr[p].y;
+          point.z = curr[p].z;
+          concat_cloud->push_back(point);
+        }
+      }
+
+      sensor_msgs::PointCloud2 cloud_out;
+      pcl::toROSMsg(*concat_cloud, cloud_out);
+      cloud_out.header.frame_id = "world";
+      cloud_out.header.stamp = ros::Time::now();
+      rc.publishCloud(cloud_out);
+
+
+      /*
+          sensor_msgs::PointCloud2 cloud_out;
+      pcl::toROSMsg(*cloud1, cloud_out);
+      cloud_out.header.frame_id = "world";
+      cloud_out.header.stamp = ros::Time::now();
+      rc.publishCloud(cloud_out);
+      */
+    }
+
 
 	/**
 	 * Order Steps by distance and print

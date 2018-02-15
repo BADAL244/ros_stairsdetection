@@ -143,6 +143,11 @@ void ROSContext::publishSteps(std::vector<Step> &steps) {
 	m_pubSteps.publish(markerArray);
 }
 
+bool ROSContext::cloudRequested() const
+{
+  return (m_pubCloud.getNumSubscribers() > 0);
+}
+
 void ROSContext::publishCloud(const sensor_msgs::PointCloud2& cloud)
 {
   m_pubCloud.publish(cloud);

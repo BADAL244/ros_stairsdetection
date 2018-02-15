@@ -94,6 +94,7 @@ public:
 
 	void publishStairways(std::vector<Stairway> &stairway);
 
+    bool cloudRequested() const;
     void publishCloud(const sensor_msgs::PointCloud2& cloud);
 
 private:
