@@ -10,7 +10,7 @@
 		<param name="world_frame" value="world" />
 		<param name="namespace" value="hmmwv" />
 		<param name="publish_steps" value="true" />
-		<param name="publish_stairways" value="true" />
+                <param name="publish_stairways" value="false" />
 
 		<param name="segmentation_iterations" value="1000" />
 		<param name="segmentation_threshold" value="0.01" />

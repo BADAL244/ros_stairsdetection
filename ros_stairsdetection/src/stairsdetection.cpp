@@ -111,7 +111,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
     seg.setEpsAngle(pcl::deg2rad (15.0));
     seg.setAxis(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
-    seg.setDistanceThreshold(0.05);
+    seg.setDistanceThreshold(0.1);
 
     seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
 	seg.setMethodType(pcl::SAC_RANSAC);
@@ -119,8 +119,11 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 	seg.setDistanceThreshold(rc.getSegmentationThresholdSetting());
 
 	pcl::ExtractIndices<pcl::PointXYZ> extract;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>),
-			cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+    //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>),
+    //		cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+
+
 	unsigned int pointsAtStart = cloud->points.size(), id = -1;
 
 	vector<Step> steps;
@@ -138,6 +141,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 			ROS_WARN("Could not estimate a planar model for the given dataset.");
 			break;
 		}
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
 
 		// extract the inliers
 		extract.setInputCloud(cloud);
@@ -181,7 +186,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
     if ( rc.cloudRequested()){
 
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr concat_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
+      pcl::PointCloud<pcl::PointXYZRGBA>::Ptr concat_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGBA> >();
 
       size_t total_size = 0;
       for (size_t i = 0; i < segmented_cloud_vector.size(); ++i){
@@ -194,7 +199,18 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
         pcl::PointCloud<pcl::PointXYZ>& curr = *segmented_cloud_vector[i];
 
-        pcl::PointXYZRGB point (static_cast<double>(i)/static_cast<double>(segmented_cloud_vector.size()) , 1.0, 1.0);
+        //pcl::PointXYZRGB point (static_cast<double>(i)/static_cast<double>(segmented_cloud_vector.size()) , 1.0, 1.0);
+        pcl::PointXYZRGBA point;
+
+        uint8_t r = static_cast<uint8_t>(255.0 * (static_cast<double>(i)/static_cast<double>(segmented_cloud_vector.size())));
+        ROS_INFO("r: %d", (int)r);
+        uint8_t g = 0, b = 0;
+        uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+        //point.rgb = *reinterpret_cast<float*>(&rgb);
+        point.r = r;
+        point.g = g;
+        point.b = b;
+        point.a = 255;
 
         for (size_t p = 0; p < curr.size(); ++p){
 
@@ -204,6 +220,8 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
           concat_cloud->push_back(point);
         }
       }
+
+      ROS_INFO("Total num points: %d segments: %d, num points in concat: %d", (int)total_size, (int)segmented_cloud_vector.size(), (int)concat_cloud->size());
 
       sensor_msgs::PointCloud2 cloud_out;
       pcl::toROSMsg(*concat_cloud, cloud_out);
