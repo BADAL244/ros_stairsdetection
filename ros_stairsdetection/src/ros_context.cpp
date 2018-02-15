@@ -121,13 +121,8 @@ void ROSContext::publishStairways(std::vector<Stairway> &stairway) {
   marker.ns = m_namespaceSetting.c_str();
   marker.id = 0;
   marker.lifetime = ros::Duration();
-  marker.type = visualization_msgs::Marker::CUBE;
   marker.action = visualization_msgs::Marker::DELETEALL;
-  markerArray.markers.push_back(marker);
-  m_pubStairways.publish(markerArray);
-  markerArray.markers.clear();
 
-  //
   for (std::vector<Stairway>::iterator it = stairway.begin(); it != stairway.end(); it++) {
     visualization_msgs::Marker marker;
     double color[3];
@@ -143,6 +138,13 @@ void ROSContext::publishStairways(std::vector<Stairway> &stairway) {
 void ROSContext::publishSteps(std::vector<Step> &steps) {
   visualization_msgs::MarkerArray markerArray;
   visualization_msgs::Marker marker;
+  marker.header.frame_id = "world";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = m_namespaceSetting.c_str();
+  marker.id = 0;
+  marker.lifetime = ros::Duration();
+  marker.action = visualization_msgs::Marker::DELETEALL;
+  markerArray.markers.push_back(marker);
   double color[3];
   color[0] = color[1] = 0.f;
   color[2] = 1.f;
