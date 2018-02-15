@@ -92,15 +92,23 @@ public:
 	void setMinMax(geometry_msgs::Point min, geometry_msgs::Point max) {
 		m_min = min;
 		m_max = max;
-	}
+        }
 
-	/**
-	 * Returns the width of the Step.
-	 * @return the width of the Step
-	 */
-	double getWidth() {
-		return fabs(m_max.y - m_min.y);
-	}
+        /**
+         * Returns the width of the Step.
+         * @return the width of the Step
+         */
+        double getWidth() {
+                return fabs(m_max.y - m_min.y);
+        }
+
+        /**
+         * Returns the width of the Step.
+         * @return the width of the Step
+         */
+        double getDepth() {
+                return fabs(m_max.x - m_min.x);
+        }
 
 	/**
 	 * Returns the height of the Step.
