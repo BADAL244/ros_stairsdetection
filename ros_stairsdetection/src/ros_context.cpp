@@ -64,26 +64,30 @@ void ROSContext::init(int argc, char **argv, void (*callback)(const sensor_msgs:
 	ros::spin();
 }
 
-void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::vector<Step> &steps,
+void ROSContext::buildRosMarkerSteps(visualization_msgs::MarkerArray &marker_array, std::vector<Step> &steps,
 	double (&color)[3]) {
 
+  visualization_msgs::Marker marker;
 	marker.header.frame_id = m_cameraFrameSetting.c_str();
 	marker.header.stamp = ros::Time::now();
 	marker.ns = m_namespaceSetting.c_str();
 	marker.id = 0;
 	marker.lifetime = ros::Duration();
 
-	marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.type = visualization_msgs::Marker::CUBE;
 	marker.action = visualization_msgs::Marker::ADD;
 
-	marker.scale.x = 0.05f;
+  marker.scale.x = 1.0f;
+  marker.scale.y = 1.0f;
+  marker.scale.z = 1.0f;
 	marker.color.r = color[0];
 	marker.color.g = color[1];
 	marker.color.b = color[2];
-	marker.color.a = 1.0;
+  marker.color.a = 0.3;
 
 	for (std::vector<Step>::iterator it = steps.begin(); it != steps.end(); it++) {
 
+    marker.id = marker_array.markers.size();
 		std::vector<geometry_msgs::Point> points;
 		m_th.buildStepFromAABB(*it, points);
 
@@ -91,15 +95,27 @@ void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::ve
 		geometry_msgs::Point p2 = points.at(1);
 		geometry_msgs::Point p3 = points.at(2);
 		geometry_msgs::Point p4 = points.at(3);
+/*
+		marker.points.push_back(p1);
+		marker.points.push_back(p2);
+		marker.points.push_back(p2);
+		marker.points.push_back(p3);
+		marker.points.push_back(p3);
+		marker.points.push_back(p4);
+		marker.points.push_back(p4);
+    marker.points.push_back(p1);*/
 
-		marker.points.push_back(p1);
-		marker.points.push_back(p2);
-		marker.points.push_back(p2);
-		marker.points.push_back(p3);
-		marker.points.push_back(p3);
-		marker.points.push_back(p4);
-		marker.points.push_back(p4);
-		marker.points.push_back(p1);
+    marker.pose.position.x = 0.25*(p1.x + p2.x + p3.x + p4.x);
+    marker.pose.position.y = 0.25*(p1.y + p2.y + p3.y + p4.y);
+    marker.pose.position.z = 0.25*(p1.z + p2.z + p3.z + p4.z);
+    marker.scale.x = std::abs(p1.x - marker.pose.position.x);
+    marker.scale.y = std::abs(p1.y - marker.pose.position.y);
+    marker.scale.z = std::abs(p1.z - marker.pose.position.z);
+    marker.pose.orientation.w = 1;
+    marker.pose.orientation.x = 0;
+    marker.pose.orientation.y = 0;
+    marker.pose.orientation.z = 0;
+    marker_array.markers.push_back(marker);
 	}
 }
 
@@ -118,8 +134,8 @@ void ROSContext::publishStairways(std::vector<Stairway> &stairway) {
 		color[0] = color[2] = 0.f;
 		color[1] = 1.f;
 
-		buildRosMarkerSteps(marker, it->getSteps(), color);
-		markerArray.markers.push_back(marker);
+    buildRosMarkerSteps(markerArray, it->getSteps(), color);
+    //markerArray.markers.push_back(marker);
 	}
 
 	m_pubStairways.publish(markerArray);
@@ -132,7 +148,7 @@ void ROSContext::publishSteps(std::vector<Step> &steps) {
 	color[0] = color[1] = 0.f;
 	color[2] = 1.f;
 
-	buildRosMarkerSteps(marker, steps, color);
-	markerArray.markers.push_back(marker);
+  buildRosMarkerSteps(markerArray, steps, color);
+  //markerArray.markers.push_back(marker);
 	m_pubSteps.publish(markerArray);
 }
