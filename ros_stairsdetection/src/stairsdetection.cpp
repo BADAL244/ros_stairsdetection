@@ -160,8 +160,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
         || step.getWidth() < rc.getMinStepWidthSetting() || step.getWidth() > rc.getMaxStepWidthSetting()
         || step.getDepth() < rc.getMinStepDepthSetting() || step.getDepth() > rc.getMaxStepDepthSetting()
         || num_step_points < rc.getMinNumPointsSetting() || num_step_points > rc.getMaxNumPointsSetting()) {
-      ROS_INFO("%f %f %f %f %i %i", rc.getMinStepWidthSetting(), rc.getMaxStepWidthSetting(), rc.getMinStepDepthSetting(), rc.getMaxStepDepthSetting(), rc.getMinNumPointsSetting(), rc.getMaxNumPointsSetting());
-			continue;
+        continue;
 		}
 
 		steps.push_back(step);

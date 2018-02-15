@@ -68,8 +68,10 @@ void ROSContext::init(int argc, char **argv, void (*callback)(const sensor_msgs:
 	ros::spin();
 }
 
-void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::vector<Step> &steps,
+void ROSContext::buildRosMarkerSteps(visualization_msgs::MarkerArray &marker_array, std::vector<Step> &steps,
 	double (&color)[3]) {
+
+  visualization_msgs::Marker marker;
 
     //marker.header.frame_id = m_cameraFrameSetting.c_str();
     marker.header.frame_id = "world";
@@ -78,33 +80,30 @@ void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::ve
 	marker.id = 0;
 	marker.lifetime = ros::Duration();
 
-	marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.type = visualization_msgs::Marker::CUBE;
 	marker.action = visualization_msgs::Marker::ADD;
 
 	marker.scale.x = 0.05f;
 	marker.color.r = color[0];
 	marker.color.g = color[1];
 	marker.color.b = color[2];
-	marker.color.a = 1.0;
+  marker.color.a = 0.6;
 
-	for (std::vector<Step>::iterator it = steps.begin(); it != steps.end(); it++) {
-
-		std::vector<geometry_msgs::Point> points;
-		m_th.buildStepFromAABB(*it, points);
-
-		geometry_msgs::Point p1 = points.at(0);
-		geometry_msgs::Point p2 = points.at(1);
-		geometry_msgs::Point p3 = points.at(2);
-		geometry_msgs::Point p4 = points.at(3);
-
-		marker.points.push_back(p1);
-		marker.points.push_back(p2);
-		marker.points.push_back(p2);
-		marker.points.push_back(p3);
-		marker.points.push_back(p3);
-		marker.points.push_back(p4);
-		marker.points.push_back(p4);
-		marker.points.push_back(p1);
+  for (std::vector<Step>::iterator it = steps.begin(); it != steps.end(); it++) {
+    Eigen::Vector3f position (it->position_OBB.x, it->position_OBB.y, it->position_OBB.z);
+    Eigen::Quaternionf quat (it->rotational_matrix_OBB);
+    marker.id = marker_array.markers.size();
+    marker.pose.position.x = position.x();
+    marker.pose.position.y = position.y();
+    marker.pose.position.z = position.z();
+    marker.pose.orientation.w = quat.w();
+    marker.pose.orientation.x = quat.x();
+    marker.pose.orientation.y = quat.y();
+    marker.pose.orientation.z = quat.z();
+    marker.scale.x = it->max_point_OBB.x - it->min_point_OBB.x;
+    marker.scale.y = it->max_point_OBB.y - it->min_point_OBB.y;
+    marker.scale.z = it->max_point_OBB.z - it->min_point_OBB.z;
+    marker_array.markers.push_back(marker);
 	}
 }
 
@@ -114,30 +113,40 @@ void ROSContext::buildRosMarkerSteps(visualization_msgs::Marker &marker, std::ve
 void ROSContext::publishStairways(std::vector<Stairway> &stairway) {
 	
 	// Contains 
-	visualization_msgs::MarkerArray markerArray;
+  visualization_msgs::MarkerArray markerArray;
 
-	//
-	for (std::vector<Stairway>::iterator it = stairway.begin(); it != stairway.end(); it++) {
-		visualization_msgs::Marker marker;
-		double color[3];
-		color[0] = color[2] = 0.f;
-		color[1] = 1.f;
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "world";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = m_namespaceSetting.c_str();
+  marker.id = 0;
+  marker.lifetime = ros::Duration();
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.action = visualization_msgs::Marker::DELETEALL;
+  markerArray.markers.push_back(marker);
+  m_pubStairways.publish(markerArray);
+  markerArray.markers.clear();
 
-		buildRosMarkerSteps(marker, it->getSteps(), color);
-		markerArray.markers.push_back(marker);
+  //
+  for (std::vector<Stairway>::iterator it = stairway.begin(); it != stairway.end(); it++) {
+    visualization_msgs::Marker marker;
+    double color[3];
+    color[0] = color[2] = 0.f;
+    color[1] = 1.f;
+
+    buildRosMarkerSteps(markerArray, it->getSteps(), color);
 	}
 
 	m_pubStairways.publish(markerArray);
 }
 
 void ROSContext::publishSteps(std::vector<Step> &steps) {
-	visualization_msgs::MarkerArray markerArray;
-	visualization_msgs::Marker marker;
-	double color[3];
-	color[0] = color[1] = 0.f;
-	color[2] = 1.f;
+  visualization_msgs::MarkerArray markerArray;
+  visualization_msgs::Marker marker;
+  double color[3];
+  color[0] = color[1] = 0.f;
+  color[2] = 1.f;
 
-	buildRosMarkerSteps(marker, steps, color);
-	markerArray.markers.push_back(marker);
+  buildRosMarkerSteps(markerArray, steps, color);
 	m_pubSteps.publish(markerArray);
 }

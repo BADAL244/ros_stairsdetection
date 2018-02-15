@@ -10,7 +10,13 @@ void TransformHelper::getAABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Step &s
 	feature_extractor.compute();
 
 	pcl::PointXYZ min, max;
-	feature_extractor.getAABB(min, max);
+  feature_extractor.getAABB(min, max);
+
+  feature_extractor.getOBB(step.min_point_OBB, step.max_point_OBB, step.position_OBB, step.rotational_matrix_OBB);
+
+  //Eigen::Vector3f position (position_OBB.x, position_OBB.y, position_OBB.z);
+  //Eigen::Quaternionf quat (rotational_matrix_OBB);
+  //viewer->addCube (position, quat, max_point_OBB.x - min_point_OBB.x, max_point_OBB.y - min_point_OBB.y, max_point_OBB.z - min_point_OBB.z, "OBB");
 
 	// transform PCL points to ROS points
 	geometry_msgs::Point min_r, max_r;
