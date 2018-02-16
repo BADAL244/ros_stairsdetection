@@ -81,14 +81,14 @@ void ROSContext::buildRosMarkerSteps(visualization_msgs::MarkerArray &marker_arr
 	marker.id = 0;
 	marker.lifetime = ros::Duration();
 
-  marker.type = visualization_msgs::Marker::CUBE;
+    marker.type = visualization_msgs::Marker::CUBE;
 	marker.action = visualization_msgs::Marker::ADD;
 
 	marker.scale.x = 0.05f;
 	marker.color.r = color[0];
 	marker.color.g = color[1];
 	marker.color.b = color[2];
-  marker.color.a = 0.6;
+    marker.color.a = 0.6;
 
   for (std::vector<Step>::iterator it = steps.begin(); it != steps.end(); it++) {
     Eigen::Vector3f position (it->position_OBB.x, it->position_OBB.y, it->position_OBB.z);

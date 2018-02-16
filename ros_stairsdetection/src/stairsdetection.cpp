@@ -67,22 +67,12 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr filteredCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 
 
+
     pcl::fromROSMsg(*input, *unfilteredCloud);
 
-    pcl::CropBox<pcl::PointXYZ> cropBoxFilter (false);
-    cropBoxFilter.setInputCloud (unfilteredCloud);
-    Eigen::Vector4f min_pt (0.0f, -1.0f, -1.0f, 1.0f);
-    Eigen::Vector4f max_pt (1.5f, 1.0f, 1.5f, 1.0f);
-
-    // Cropbox slighlty bigger then bounding box of points
-    cropBoxFilter.setMin (min_pt);
-    cropBoxFilter.setMax (max_pt);
 
 
-    // Cloud
-    pcl::PointCloud<pcl::PointXYZ>::Ptr boxFilteredCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 
-    cropBoxFilter.filter(*boxFilteredCloud);
 
     //pcl_conversions::toPCL(*input, *unfilteredCloud);
 
@@ -102,13 +92,30 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr unfiltered_cloud_world = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 
-    pcl::transformPointCloud(*boxFilteredCloud, *unfiltered_cloud_world, cam_to_world_transform_eigen);
+    pcl::transformPointCloud(*unfilteredCloud, *unfiltered_cloud_world, cam_to_world_transform_eigen);
+
+
+
+
+    // Cloud
+    pcl::PointCloud<pcl::PointXYZ>::Ptr boxFilteredCloudWorld = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+    pcl::CropBox<pcl::PointXYZ> cropBoxFilter (false);
+    cropBoxFilter.setInputCloud (unfiltered_cloud_world);
+    Eigen::Vector4f min_pt (0.0f, -1.0f, -1.0f, 1.0f);
+    Eigen::Vector4f max_pt (1.5f, 1.0f, 1.5f, 1.0f);
+
+    // Cropbox slighlty bigger then bounding box of points
+    cropBoxFilter.setMin (min_pt);
+    cropBoxFilter.setMax (max_pt);
+
+    cropBoxFilter.filter(*boxFilteredCloudWorld);
 
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
     pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud(unfiltered_cloud_world);
+    sor.setInputCloud(boxFilteredCloudWorld);
     float leaf_size = 0.05f;
     sor.setLeafSize(leaf_size, leaf_size, leaf_size);								// default: sor.setLeafSize(0.01f, 0.01f, 0.01f);
     sor.filter(*cloud);
@@ -163,9 +170,10 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
 		// extract the inliers
 		extract.setInputCloud(cloud);
 		extract.setIndices(inliers);
-    extract.setNegative(false);
-    extract.filter(*cloud1);
-    int num_step_points = (int)cloud1->size();
+        extract.setNegative(false);
+        extract.filter(*cloud1);
+
+        int num_step_points = (int)cloud1->size();
 
 		extract.setNegative(true);
 		extract.filter(*cloud2);
@@ -245,7 +253,7 @@ void callback(const sensor_msgs::PointCloud2ConstPtr &input) {
       sensor_msgs::PointCloud2 cloud_out;
       pcl::toROSMsg(*concat_cloud, cloud_out);
       cloud_out.header.frame_id = "world";
-      cloud_out.header.stamp = ros::Time::now();
+      cloud_out.header.stamp = input->header.stamp;
       rc.publishCloud(cloud_out);
 
 
