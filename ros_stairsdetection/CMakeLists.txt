@@ -129,6 +129,7 @@ add_executable(stairsdetection
 	src/print_helpers.cpp
 )
 target_link_libraries(stairsdetection ${catkin_LIBRARIES} yaml-cpp)
+add_dependencies(stairsdetection ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 find_package(catkin REQUIRED
 	COMPONENTS roslaunch
